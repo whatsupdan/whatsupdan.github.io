@@ -37,6 +37,126 @@
 <script src="sankey.js"></script>
 <script>
 
+    var NodeLinkGenerator = function(){
+
+        var links = [];
+
+        var data = [];
+
+        var nodes = [
+            {node: 0, name: 'High School Students'},
+            {node: 1, name: 'Graduate HS' },
+            {node: 2, name: 'No HS Diploma'},
+            {node: 3, name: '4-year degree'},
+            {node: 4, name: '2-year degree'},
+            {node: 5, name: 'Certificate'},
+            {node: 6, name: 'Enroll in 4-year program'},
+            {node: 7, name: 'Enroll in 2-year program'},
+            {node: 8, name: 'Change to 2-year program'},
+            {node: 9, name: 'Change to 4-year program'},
+            {node: 10, name: 'HS Diploma'},
+            {node: 11, name: 'No Degree'}
+        ];
+
+        var types = {
+            "_HighSchoolStudents" : 0,
+            "_HighSchoolDiploma": 1,
+            "_NoHighSchoolDiploma": 2,
+            "_4YearDegree": 3,
+            "_2YearDegree": 4,
+            "_Certificate": 5,
+            "_EnrollIn4Year": 6,
+            "_EnrollIn2Year": 7,
+            "_ChangeTo2Year": 8,
+            "_ChangeTo4Year": 9,
+            "_NoPostSecondaryDegree": 10,
+            "_NoDegree": 11
+        };
+
+        this.createLinks = function(){
+            for(var code in data) {
+                if(data.hasOwnProperty(code)){
+                    this.createLinksForCode(code, data[code]);
+                }
+            }
+            return links;
+        };
+
+        this.getLinks = function(){
+            return links;
+        };
+
+        this.getNodes = function(){
+            return nodes;
+        };
+
+        this.addAndFilterResponse = function(response){
+            for(var index in response){
+                if(response.hasOwnProperty(index)){
+                    if (response[index] !== -1){
+                        data[index] = response[index];
+                    }
+                }
+            }
+        };
+
+        this.createLinksForCode = function (code, value) {
+            var source, target;
+
+            if(code[1] === 'X') {
+                this.createLink(types._HighSchoolStudents, types._NoHighSchoolDiploma, data[code], code);
+            } else {
+                this.createLink(types._HighSchoolStudents, types._HighSchoolDiploma, data[code], code);
+            }
+
+            if (code.length === 3) {
+                if(code[2] === 'X'){
+                    source = types._NoHighSchoolDiploma;
+                    target = types._NoDegree;
+                } else {
+                    source = types._HighSchoolDiploma;
+                    target = types._NoPostSecondaryDegree
+                }
+                this.createLink(source, target, value, code);
+            }
+
+            if (code.length > 3) {
+                source = (code[1] === 'X') ? types._NoHighSchoolDiploma : types._HighSchoolDiploma;
+                target = (code[2] === '2') ? types._EnrollIn2Year : types._EnrollIn4Year;
+                this.createLink(source, target, value, code);
+                source = target;
+
+                if (code.length === 4) {
+                    target = (code[3] === 'B') ? types._4YearDegree : (code[3] === 'A') ? types._2YearDegree : (code[3] === 'C') ? types._Certificate : types._NoPostSecondaryDegree;
+                    this.createLink(source, target, value, code);
+                }
+
+                if (code.length === 5) {
+                    target = code[3] === '2' ? types._ChangeTo2Year : types._ChangeTo4Year;
+                    this.createLink(source, target, value, code);
+                    source = target;
+                    target = (code[4] === 'B') ? types._4YearDegree : (code[4] === 'A') ? types._2YearDegree : (code[4] === 'C') ? types._Certificate : types._NoPostSecondaryDegree;
+                    this.createLink(source, target, value, code);
+                }
+            }
+        };
+
+        this.getLinkIndexBySourceAndTarget = function(source, target){
+            for(var i = 0; i < links.length; i++){
+                if(links[i].source === source && links[i].target === target){
+                    return i;
+                }
+            }
+            return links.push({"source": source, "target": target, "value": 0, codes:[]}) - 1;
+        };
+
+        this.createLink = function(source, target, value, code){
+            var i = this.getLinkIndexBySourceAndTarget(source, target);
+            links[i].value += value;
+            links[i].codes.push(code);
+        };
+    };
+
     var dataset =  {
         "HXX": 5529,
         "HX2X": 4106,
@@ -68,105 +188,35 @@
         "HD42B": 2919
     };
 
-
-
-
-    var NodeLinkGenerator = function(){
-
-        var links = [];
-
-        var data = [];
-
-        var nodes = [
-            {node: 0, name: 'High School Students'},
-            {node: 1, name: 'High School Diploma' },
-            {node: 2, name: 'No High School Diploma'},
-            {node: 3, name: '4-year degree'},
-            {node: 4, name: '2-year degree'},
-            {node: 5, name: 'Certificate'},
-            {node: 6, name: 'Enroll in 4-year program'},
-            {node: 7, name: 'Enroll in 2-year program'},
-            {node: 8, name: 'Change to 2-year program'},
-            {node: 9, name: 'Change to 4-year program'},
-            {node: 10, name: 'No Further Education'}
-        ];
-
-        this.createLinks = function(){
-
-            for(var code in data) {
-                if(data.hasOwnProperty(code)){
-                    if(code[1] === 'X') {
-                        this.createLink(0, 2, data[code], code);
-                    } else {
-                        this.createLink(0, 1, data[code], code);
-                    }
-
-                    this.createLinksForCode(code, data[code]);
-                }
-            }
-            return links;
-        };
-
-        this.getLinks = function(){
-            return links;
-        };
-
-        this.getNodes = function(){
-            return nodes;
-        };
-
-        this.addAndFilterResponse = function(response){
-            for(var index in response){
-                if(response.hasOwnProperty(index)){
-                    if (response[index] !== -1){
-                        data[index] = response[index];
-                    }
-                }
-            }
-        };
-
-        this.createLinksForCode = function (code, value) {
-            var source, target;
-            if (code.length === 3) {
-                source = (code[2] === 'X') ? 2 : 1;
-                this.createLink(source, 10, value, code);
-            }
-
-            if (code.length > 3) {
-                source = (code[1] === 'X') ? 2 : 1;
-                target = (code[2] === '2') ? 7 : 6;
-                this.createLink(source, target, value, code);
-                source = target;
-
-                if (code.length === 4) {
-                    target = (code[3] === 'B') ? 3 : (code[3] === 'A') ? 4 : (code[3] === 'C') ? 5 : 10;
-                    this.createLink(source, target, value, code);
-                }
-
-                if (code.length === 5) {
-                    target = code[3] === '2' ? 8 : 9;
-                    this.createLink(source, target, value, code);
-                    source = target;
-                    target = (code[4] === 'B') ? 3 : (code[4] === 'A') ? 4 : (code[4] === 'C') ? 5 : 10;
-                    this.createLink(source, target, value, code);
-                }
-            }
-        };
-
-        this.getLinkIndexBySourceAndTarget = function(source, target){
-            for(var i = 0; i < links.length; i++){
-                if(links[i].source === source && links[i].target === target){
-                    return i;
-                }
-            }
-            return links.push({"source": source, "target": target, "value": 0, codes:[]}) - 1;
-        };
-
-        this.createLink = function(source, target, value, code){
-            var i = this.getLinkIndexBySourceAndTarget(source, target);
-            links[i].value += value;
-            links[i].codes.push(code);
-        };
+    var dataset2 = {
+        "HXX": 232,
+        "HX2X": 189,
+        "HX2C": -1,
+        "HX2A": -1,
+        "HX24X": 7,
+        "HX24C": -1,
+        "HX24A": -1,
+        "HX24B": -1,
+        "HX4X": 13,
+        "HX4B": -1,
+        "HX42X": 8,
+        "HX42C": -1,
+        "HX42A": -1,
+        "HX42B": -1,
+        "HDD": 174,
+        "HD2D": 223,
+        "HD2C": -1,
+        "HD2A": 21,
+        "HD24D": 32,
+        "HD24C": -1,
+        "HD24A": 16,
+        "HD24B": 12,
+        "HD4D": 56,
+        "HD4B": 71,
+        "HD42D": 49,
+        "HD42C": -1,
+        "HD42A": -1,
+        "HD42B": 41
     };
 
 
