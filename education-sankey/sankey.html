@@ -84,13 +84,11 @@
             {node: 3, name: '4-year degree'},
             {node: 4, name: '2-year degree'},
             {node: 5, name: 'Certificate'},
-            {node: 6, name: 'High School Graduates'},
-            {node: 7, name: 'No High School Diploma'},
-            {node: 8, name: 'Enroll in 4-year program'},
-            {node: 9, name: 'Enroll in 2-year program'},
-            {node: 10, name: 'Change to 2-year program'},
-            {node: 11, name: 'Change to 4-year program'},
-            {node: 12, name: 'No Further Education'}
+            {node: 6, name: 'Enroll in 4-year program'},
+            {node: 7, name: 'Enroll in 2-year program'},
+            {node: 8, name: 'Change to 2-year program'},
+            {node: 9, name: 'Change to 4-year program'},
+            {node: 10, name: 'No Further Education'}
         ];
 
         this.createLinks = function(){
@@ -131,25 +129,25 @@
             var source, target;
             if (code.length === 3) {
                 source = (code[2] === 'X') ? 2 : 1;
-                this.createLink(source, 12, value, code);
+                this.createLink(source, 10, value, code);
             }
 
             if (code.length > 3) {
                 source = (code[1] === 'X') ? 2 : 1;
-                target = (code[2] === '2') ? 9 : 8;
+                target = (code[2] === '2') ? 7 : 6;
                 this.createLink(source, target, value, code);
                 source = target;
 
                 if (code.length === 4) {
-                    target = (code[3] === 'B') ? 3 : (code[3] === 'A') ? 4 : (code[3] === 'C') ? 5 : 12;
+                    target = (code[3] === 'B') ? 3 : (code[3] === 'A') ? 4 : (code[3] === 'C') ? 5 : 10;
                     this.createLink(source, target, value, code);
                 }
 
                 if (code.length === 5) {
-                    target = code[3] === '2' ? 10 : 11;
+                    target = code[3] === '2' ? 8 : 9;
                     this.createLink(source, target, value, code);
                     source = target;
-                    target = (code[4] === 'B') ? 3 : (code[4] === 'A') ? 4 : (code[4] === 'C') ? 5 : 12;
+                    target = (code[4] === 'B') ? 3 : (code[4] === 'A') ? 4 : (code[4] === 'C') ? 5 : 10;
                     this.createLink(source, target, value, code);
                 }
             }
