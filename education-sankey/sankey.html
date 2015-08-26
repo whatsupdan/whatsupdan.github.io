@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Oregon Learns Sankey</title>
+    <style>
+
+        .node rect {
+            cursor: move;
+            fill-opacity: .9;
+            shape-rendering: crispEdges;
+        }
+
+        .node text {
+            pointer-events: none;
+            text-shadow: 0 1px 0 #fff;
+        }
+
+        .link {
+            fill: none;
+            stroke: #000;
+            stroke-opacity: .2;
+        }
+
+        .link:hover {
+            stroke-opacity: .5;
+        }
+
+    </style>
+</head>
+<body>
+<div id="chart"></div>
+
+
+
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="sankey.js"></script>
+<script>
+
+    var dataset =  {
+        "HXX": 5529,
+        "HX2X": 4106,
+        "HX2C": 32,
+        "HX2A": 109,
+        "HX24X": 272,
+        "HX24C": -1,
+        "HX24A": 51,
+        "HX24B": 113,
+        "HX4X": 237,
+        "HX4B": 116,
+        "HX42X": 139,
+        "HX42C": -1,
+        "HX42A": 11,
+        "HX42B": 58,
+        "HDD": 6513,
+        "HD2D": 8433,
+        "HD2C": 186,
+        "HD2A": 805,
+        "HD24D": 1432,
+        "HD24C": 17,
+        "HD24A": 595,
+        "HD24B": 1371,
+        "HD4D": 1865,
+        "HD4B": 4394,
+        "HD42D": 2005,
+        "HD42C": 36,
+        "HD42A": 288,
+        "HD42B": 2919
+    };
+
+
+
+
+    var NodeLinkGenerator = function(){
+
+        var links = [];
+
+        var data = [];
+
+        var nodes = [
+            {node: 0, name: 'High School Students'},
+            {node: 1, name: 'High School Diploma' },
+            {node: 2, name: 'No High School Diploma'},
+            {node: 3, name: '4-year degree'},
+            {node: 4, name: '2-year degree'},
+            {node: 5, name: 'Certificate'},
+            {node: 6, name: 'High School Graduates'},
+            {node: 7, name: 'No High School Diploma'},
+            {node: 8, name: 'Enroll in 4-year program'},
+            {node: 9, name: 'Enroll in 2-year program'},
+            {node: 10, name: 'Change to 2-year program'},
+            {node: 11, name: 'Change to 4-year program'},
+            {node: 12, name: 'No Further Education'}
+        ];
+
+        this.createLinks = function(){
+
+            for(var code in data) {
+                if(data.hasOwnProperty(code)){
+                    if(code[1] === 'X') {
+                        this.createLink(0, 2, data[code], code);
+                    } else {
+                        this.createLink(0, 1, data[code], code);
+                    }
+
+                    this.createLinksForCode(code, data[code]);
+                }
+            }
+            return links;
+        };
+
+        this.getLinks = function(){
+            return links;
+        };
+
+        this.getNodes = function(){
+            return nodes;
+        };
+
+        this.addAndFilterResponse = function(response){
+            for(var index in response){
+                if(response.hasOwnProperty(index)){
+                    if (response[index] !== -1){
+                        data[index] = response[index];
+                    }
+                }
+            }
+        };
+
+        this.createLinksForCode = function (code, value) {
+            var source, target;
+            if (code.length === 3) {
+                source = (code[2] === 'X') ? 2 : 1;
+                this.createLink(source, 12, value, code);
+            }
+
+            if (code.length > 3) {
+                source = (code[1] === 'X') ? 2 : 1;
+                target = (code[2] === '2') ? 9 : 8;
+                this.createLink(source, target, value, code);
+                source = target;
+
+                if (code.length === 4) {
+                    target = (code[3] === 'B') ? 3 : (code[3] === 'A') ? 4 : (code[3] === 'C') ? 5 : 12;
+                    this.createLink(source, target, value, code);
+                }
+
+                if (code.length === 5) {
+                    target = code[3] === '2' ? 10 : 11;
+                    this.createLink(source, target, value, code);
+                    source = target;
+                    target = (code[4] === 'B') ? 3 : (code[4] === 'A') ? 4 : (code[4] === 'C') ? 5 : 12;
+                    this.createLink(source, target, value, code);
+                }
+            }
+        };
+
+        this.getLinkIndexBySourceAndTarget = function(source, target){
+            for(var i = 0; i < links.length; i++){
+                if(links[i].source === source && links[i].target === target){
+                    return i;
+                }
+            }
+            return links.push({"source": source, "target": target, "value": 0, codes:[]}) - 1;
+        };
+
+        this.createLink = function(source, target, value, code){
+            var i = this.getLinkIndexBySourceAndTarget(source, target);
+            links[i].value += value;
+            links[i].codes.push(code);
+        };
+    };
+
+
+    var nodeLinkGen = new NodeLinkGenerator();
+
+    nodeLinkGen.addAndFilterResponse(dataset);
+
+
+    var graph = {};
+    graph.nodes = nodeLinkGen.getNodes();
+    graph.links = nodeLinkGen.createLinks();
+
+    console.log('Nodes:' );
+    console.log(graph.nodes);
+   console.log('Links:' );
+    console.log(graph.links);
+
+
+
+
+
+
+
+    var units = 'Students';
+
+    var margin = {top: 10, right: 10, bottom: 10, left: 10},
+            width = 1200 - margin.left - margin.right,
+            height = 600 - margin.top - margin.bottom;
+
+    var format = function(d) { return d + " " + units; },
+            color = d3.scale.category20();
+
+    var svg = d3.select("#chart").append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform",
+            "translate(" + margin.left + "," + margin.top + ")");
+
+    // Set the sankey diagram properties
+    var sankey = d3.sankey()
+            .nodeWidth(36)
+            .nodePadding(40)
+            .size([width, height]);
+
+    var path = sankey.link();
+
+    sankey.nodes(graph.nodes).links(graph.links).layout(32);
+
+    // add in the links
+    var link = svg.append("g").selectAll(".link")
+            .data(graph.links)
+            .enter().append("path")
+            .attr("class", "link")
+            .attr("d", path)
+            .style("stroke-width", function(d) { return Math.max(1, d.dy); })
+            .sort(function(a, b) { return b.dy - a.dy; });
+
+    // add the link titles
+    link.append("title")
+            .text(function(d) {
+                return d.source.name + " → " +
+                        d.target.name + "\n" + format(d.value); });
+
+    // add in the nodes
+    var node = svg.append("g").selectAll(".node")
+            .data(graph.nodes)
+            .enter().append("g")
+            .attr("class", "node")
+            .attr("transform", function(d) {
+                return "translate(" + d.x + "," + d.y + ")"; })
+            .call(d3.behavior.drag()
+                    .origin(function(d) { return d; })
+                    .on("dragstart", function() {
+                        this.parentNode.appendChild(this); })
+                    .on("drag", dragmove));
+
+     //add the rectangles for the nodes
+    node.append("rect")
+            .attr("height", function(d) { return d.dy; })
+            .attr("width", sankey.nodeWidth())
+            .style("fill", function(d) {
+                return d.color = color(d.name.replace(/ .*/, "")); })
+            .style("stroke", function(d) {
+                return d3.rgb(d.color).darker(2); })
+            .append("title")
+            .text(function(d) {
+                return d.name + "\n" + format(d.value); });
+
+    // add in the title for the nodes
+    node.append("text")
+            .attr("x", -6)
+            .attr("y", function(d) { return d.dy / 2; })
+            .attr("dy", ".35em")
+            .attr("text-anchor", "end")
+            .attr("transform", null)
+            .text(function(d) { return d.name; })
+            .filter(function(d) { return d.x < width / 2; })
+            .attr("x", 6 + sankey.nodeWidth())
+            .attr("text-anchor", "start");
+
+    // the function for moving the nodes
+    function dragmove(d) {
+        d3.select(this).attr("transform",
+                "translate(" + d.x + "," + (
+                        d.y = Math.max(0, Math.min(height - d.dy, d3.event.y))
+                ) + ")");
+        sankey.relayout();
+        link.attr("d", path);
+    }
+
+
+
+
+
+
+
+</script>
+
+</body>
+</html>
