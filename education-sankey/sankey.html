@@ -43,6 +43,8 @@
 
         var data = [];
 
+        var total = 0;
+
         var nodes = [
             {node: 0, name: 'High School Students'},
             {node: 1, name: 'Graduate HS' },
@@ -90,11 +92,16 @@
             return nodes;
         };
 
+        this.getTotalStudents = function(){
+            return total;
+        };
+
         this.addAndFilterResponse = function(response){
             for(var index in response){
                 if(response.hasOwnProperty(index)){
                     if (response[index] !== -1){
                         data[index] = response[index];
+                        total += data[index];
                     }
                 }
             }
@@ -127,7 +134,7 @@
                 source = target;
 
                 if (code.length === 4) {
-                    target = (code[3] === 'B') ? types._4YearDegree : (code[3] === 'A') ? types._2YearDegree : (code[3] === 'C') ? types._Certificate : types._NoPostSecondaryDegree;
+                    target = (code[3] === 'B') ? types._4YearDegree : (code[3] === 'A') ? types._2YearDegree : (code[3] === 'C') ? types._Certificate : (code[3] === 'D') ? types._NoPostSecondaryDegree : types._NoDegree;
                     this.createLink(source, target, value, code);
                 }
 
@@ -135,7 +142,7 @@
                     target = code[3] === '2' ? types._ChangeTo2Year : types._ChangeTo4Year;
                     this.createLink(source, target, value, code);
                     source = target;
-                    target = (code[4] === 'B') ? types._4YearDegree : (code[4] === 'A') ? types._2YearDegree : (code[4] === 'C') ? types._Certificate : types._NoPostSecondaryDegree;
+                    target = (code[4] === 'B') ? types._4YearDegree : (code[4] === 'A') ? types._2YearDegree : (code[4] === 'C') ? types._Certificate : (code[4] === 'D') ? types._NoPostSecondaryDegree : types._NoDegree;
                     this.createLink(source, target, value, code);
                 }
             }
@@ -234,6 +241,10 @@
    console.log('Links:' );
     console.log(graph.links);
 
+    var totalStudents = nodeLinkGen.getTotalStudents();
+
+    console.log('Total students: ' + nodeLinkGen.getTotalStudents());
+
 
 
 
@@ -313,7 +324,17 @@
             .attr("dy", ".35em")
             .attr("text-anchor", "end")
             .attr("transform", null)
-            .text(function(d) { return d.name; })
+            .text(function(d) {
+                if(d.name === "High School Students") {
+                    return totalStudents + ' Students';
+                } else {
+                    var percent = Math.floor((d.value / totalStudents) * 100);
+                    if(percent === 0) {
+                        percent = 'Less than 1';
+                    }
+                    return percent + '% ' + d.name;
+                }
+            })
             .filter(function(d) { return d.x < width / 2; })
             .attr("x", 6 + sankey.nodeWidth())
             .attr("text-anchor", "start");
@@ -335,6 +356,15 @@
 
 
 </script>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
+  ga('create', 'UA-66833325-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
 </body>
 </html>
