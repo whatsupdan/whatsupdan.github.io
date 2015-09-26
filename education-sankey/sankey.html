@@ -254,11 +254,11 @@
     var units = 'Students';
 
     var theW = window.innerWidth;
-    var theH = window.innerHeigh
+    var theH = window.innerHeight;
 
     var margin = {top: 10, right: 10, bottom: 10, left: 10},
-            width = theW - margin.left - margin.right,
-            height = theH - margin.top - margin.bottom;
+            width = window.innerWidth - margin.left - margin.right,
+            height = window.innerHeight - margin.top - margin.bottom;
 
     var format = function(d) { return d + " " + units; },
             color = d3.scale.category20();
