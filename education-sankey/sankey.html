@@ -253,9 +253,12 @@
 
     var units = 'Students';
 
+    var theW = window.innerWidth;
+    var theH = window.innerHeigh
+
     var margin = {top: 10, right: 10, bottom: 10, left: 10},
-            width = 1200 - margin.left - margin.right,
-            height = 600 - margin.top - margin.bottom;
+            width = theW - margin.left - margin.right,
+            height = theH - margin.top - margin.bottom;
 
     var format = function(d) { return d + " " + units; },
             color = d3.scale.category20();
